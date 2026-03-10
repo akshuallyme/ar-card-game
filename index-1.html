@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fantasy TCG: Berserker Arena</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Cormorant+Garamond:wght@600&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #a2d2ff;
+            font-family: 'Cormorant Garamond', serif;
+        }
+
+        #gui {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 440px;
+            background: rgba(245, 235, 215, 0.95);
+            color: #4a3a2a;
+            padding: 12px;
+            border-radius: 4px;
+            border: 2px solid #8c6c4c;
+            text-align: center;
+            backdrop-filter: blur(4px);
+            z-index: 20;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        #arena-title {
+            font-family: 'Cinzel';
+            font-size: 12px;
+            letter-spacing: 2px;
+            color: #6e4e37;
+            margin-bottom: 8px;
+            font-weight: 900;
+        }
+
+        .combatant-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 4px 0;
+        }
+
+        .bar-bg {
+            flex: 1;
+            background: #2a221b;
+            height: 10px;
+            border: 1px solid #8c6c4c;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hp-fill {
+            height: 100%;
+            transition: width 0.4s ease-out;
+        }
+
+        #enemy-hp-fill {
+            background: linear-gradient(90deg, #880000, #d32f2f);
+        }
+
+        #player-hp-fill {
+            background: linear-gradient(90deg, #1b5e20, #4caf50);
+        }
+
+        .hp-label {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-size: 8px;
+            font-weight: bold;
+            line-height: 10px;
+            font-family: sans-serif;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        button {
+            flex: 1;
+            background: #8c6c4c;
+            color: white;
+            border: none;
+            padding: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-family: 'Cinzel';
+            font-size: 10px;
+            text-transform: uppercase;
+            transition: 0.2s;
+            box-shadow: 0 3px 0 #5e4a34;
+        }
+
+            button:hover:not(:disabled) {
+                background: #a68561;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 0 #5e4a34;
+            }
+
+            button:active:not(:disabled) {
+                transform: translateY(1px);
+                box-shadow: 0 0 0 #5e4a34;
+            }
+
+            button:disabled {
+                background: #ccc;
+                box-shadow: 0 3px 0 #999;
+                color: #888;
+                cursor: not-allowed;
+            }
+
+        #log {
+            font-size: 12px;
+            color: #5e4a34;
+            margin-top: 8px;
+            min-height: 24px;
+            font-style: italic;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            padding-top: 6px;
+        }
+
+        /* Card Visuals */
+        .card-frame {
+            padding: 10px;
+            width: 160px;
+            pointer-events: none;
+            background: #fffdf5;
+            border: 3px solid #8c6c4c;
+            border-radius: 2px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            transition: box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        /* BERSERKER MODE Visual */
+        .berserker-active {
+            border-color: #ff8c00 !important;
+            box-shadow: 0 0 20px #ff4500, 0 0 40px rgba(255, 69, 0, 0.4) !important;
+        }
+
+        .inner-cutout {
+            border: 1px solid #d4c4a8;
+            background: #fdfaf0;
+            padding: 6px;
+            margin-top: 4px;
+            border-radius: 2px;
+        }
+
+        .stars {
+            color: #d4af37;
+            font-size: 11px;
+        }
+
+        .berserker-tag {
+            font-family: 'Cinzel';
+            font-size: 9px;
+            color: #ff4500;
+            font-weight: 900;
+            margin-top: 4px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="gui">
+        <div id="arena-title">GRAND ARENA OF ELDER LIGHT</div>
+        <div class="combatant-row">
+            <div style="width:40px; font-size:9px; font-weight:bold;">FOE</div>
+            <div class="bar-bg"><div id="enemy-hp-fill" class="hp-fill" style="width:100%"></div><div class="hp-label"><span id="enemy-hp-text">1000</span>/1000</div></div>
+        </div>
+        <div class="combatant-row">
+            <div style="width:40px; font-size:9px; font-weight:bold;">HERO</div>
+            <div class="bar-bg"><div id="player-hp-fill" class="hp-fill" style="width:100%"></div><div class="hp-label"><span id="player-hp-text">1000</span>/1000</div></div>
+        </div>
+        <div id="buffs-display" style="font-size: 9px; color: #8c6c4c; margin: 4px 0; height: 10px;"></div>
+        <div class="btn-group">
+            <button id="btn-draw">Summon</button>
+            <button id="btn-support" disabled>Blessing (<span id="sup-cnt">8</span>)</button>
+            <button id="btn-attack" disabled>Strike</button>
+        </div>
+        <div id="log">The sun is high. Prepare for battle.</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS2DRenderer.js"></script>
+
+    <script>
+        const fighters = [
+        { name: "Magma Mauler", dmg: 75, acc: 0.48, color: 0xaa4400, stars: 4 },
+        { name: "Cinder Witch", dmg: 58, acc: 0.58, color: 0xcc3300, stars: 4 },
+        { name: "Iron Guard",   dmg: 35, acc: 0.80, color: 0x555555, stars: 3 },
+        { name: "Shadow Rogue", dmg: 95, acc: 0.35, color: 0x220033, stars: 5 },
+        { name: "Bolt Archer",  dmg: 48, acc: 0.68, color: 0x997700, stars: 3 }
+        ];
+
+        let state = { pHP: 1000, eHP: 1000, sup: 8, eSup: 8, AP: 0, pF: null, eF: null, bDmg: 0, bAcc: 0, eBDmg: 0, eBAcc: 0, shake: 0 };
+        let mouse = new THREE.Vector2();
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xa2d2ff);
+        const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        const labelRenderer = new THREE.CSS2DRenderer();
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0';
+        document.body.appendChild(labelRenderer.domElement);
+
+        // Ground
+        const ground = new THREE.Mesh(new THREE.PlaneGeometry(50, 50), new THREE.MeshStandardMaterial({ color: 0xeedcb3, roughness: 1 }));
+        ground.rotation.x = -Math.PI / 2; ground.position.y = -1.2; ground.receiveShadow = true;
+        scene.add(ground);
+
+        // Cards
+        const cardGeo = new THREE.BoxGeometry(2.4, 0.12, 1.5);
+        const makeCard = (z) => {
+        const group = new THREE.Group();
+        const mesh = new THREE.Mesh(cardGeo, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 }));
+        mesh.castShadow = true; mesh.receiveShadow = true;
+        group.add(mesh);
+
+        const div = document.createElement('div');
+        div.className = 'card-frame';
+        div.innerHTML = `<div class="stars"></div><div class="name"></div><div class="inner-cutout"></div><div class="berserker-tag">BERSERKER MODE</div>`;
+        const label = new THREE.CSS2DObject(div);
+        label.position.set(0, 0.38, 0); mesh.add(label);
+
+        group.position.set(0, -0.7, z);
+        scene.add(group);
+        return { group, mesh, div };
+        };
+
+        const pCard = makeCard(-3.8);
+        const eCard = makeCard(-7.8);
+
+        // Aura Lights for Berserker Mode
+        const pAura = new THREE.PointLight(0xff4500, 0, 5); pAura.position.set(0, -0.2, -3.8); scene.add(pAura);
+        const eAura = new THREE.PointLight(0xff4500, 0, 5); eAura.position.set(0, -0.2, -7.8); scene.add(eAura);
+
+        // Global Lights
+        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+        const sun = new THREE.DirectionalLight(0xfff4e0, 1.2);
+        sun.position.set(10, 20, 10); sun.castShadow = true;
+        scene.add(sun);
+
+        camera.position.set(0, 8, 4);
+        camera.lookAt(0, -1, -6);
+
+        window.addEventListener('mousemove', (e) => {
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        // BERSERKER CHECK LOGIC
+        const isBerserk = (hpSelf, hpOther) => {
+        return hpSelf <= (hpOther * 0.6); // 40% lower
+        };
+
+        const updateUI = () => {
+        document.getElementById('player-hp-text').innerText = Math.max(0, state.pHP);
+        document.getElementById('enemy-hp-text').innerText = Math.max(0, state.eHP);
+        document.getElementById('player-hp-fill').style.width = (state.pHP / 10) + '%';
+        document.getElementById('enemy-hp-fill').style.width = (state.eHP / 10) + '%';
+        document.getElementById('sup-cnt').innerText = state.sup;
+
+        const b = [];
+        if(state.AP > 0) b.push(`AP: ${state.AP}`);
+        if(isBerserk(state.pHP, state.eHP)) b.push(`<span style="color:#ff4500">BERSERKER ACTIVE</span>`);
+        document.getElementById('buffs-display').innerHTML = b.join(' | ');
+        };
+
+        const updateCardVisual = (cardObj, fighter, bD, bA, isP, hpSelf, hpOther) => {
+        const berserk = isBerserk(hpSelf, hpOther);
+        const finalDmg = Math.round((fighter.dmg + bD) * (berserk ? 1.2 : 1.0));
+        const finalAcc = Math.min(1.0, (fighter.acc + bA) + (berserk ? 0.15 : 0));
+
+        cardObj.mesh.material.color.setHex(fighter.color);
+
+        // Apply Orange Glow CSS
+        if (berserk) {
+        cardObj.div.classList.add('berserker-active');
+        cardObj.div.querySelector('.berserker-tag').style.display = 'block';
+        if(isP) pAura.intensity = 2; else eAura.intensity = 2;
+        } else {
+        cardObj.div.classList.remove('berserker-active');
+        cardObj.div.querySelector('.berserker-tag').style.display = 'none';
+        if(isP) pAura.intensity = 0; else eAura.intensity = 0;
+        }
+
+        cardObj.div.querySelector('.stars').innerHTML = '★'.repeat(fighter.stars);
+        cardObj.div.querySelector('.name').innerHTML = `<div style="font-family:'Cinzel'; font-weight:900; font-size:12px; color:#4a3a2a;">${fighter.name.toUpperCase()}</div>`;
+        cardObj.div.querySelector('.inner-cutout').innerHTML = `
+        <div style="font-size:10px; color:${isP ? '#1b5e20' : '#b71c1c'}; font-weight:bold;">POW: ${finalDmg}</div>
+        <div style="font-size:9px; color:#333">ACC: ${Math.round(finalAcc*100)}%</div>
+        `;
+        };
+
+        document.getElementById('btn-draw').onclick = () => {
+        state.pF = fighters[Math.floor(Math.random()*fighters.length)];
+        if(state.AP === 0) state.AP = 4;
+        updateCardVisual(pCard, state.pF, state.bDmg, state.bAcc, true, state.pHP, state.eHP);
+        document.getElementById('btn-attack').disabled = false;
+        document.getElementById('btn-support').disabled = false;
+        document.getElementById('log').innerText = `${state.pF.name} summoned.`;
+        updateUI();
+        };
+
+        document.getElementById('btn-attack').onclick = () => {
+        const berserk = isBerserk(state.pHP, state.eHP);
+        const chance = (state.pF.acc + state.bAcc) + (berserk ? 0.15 : 0);
+
+        if(Math.random() <= chance) {
+        const d = Math.round((state.pF.dmg + state.bDmg) * (berserk ? 1.2 : 1.0));
+        state.eHP -= d;
+        state.shake = 0.15;
+        document.getElementById('log').innerText = `${berserk ? "BERSERKER STRIKE!" : "Hit!"} Dealt ${d} damage.`;
+        pCard.group.position.z -= 0.6; setTimeout(()=>pCard.group.position.z += 0.6, 120);
+        } else { document.getElementById('log').innerText = "Miss!"; }
+        state.AP--;
+        checkTurn();
+        };
+
+        document.getElementById('btn-support').onclick = () => {
+        state.sup--; state.AP--;
+        const roll = Math.random();
+        // Half bonuses logic: +0.05 acc or +10 dmg
+        if(roll < 0.4) { state.bAcc += 0.05; document.getElementById('log').innerText = "Minor Accuracy boost."; }
+        else if(roll < 0.8) { state.bDmg += 10; document.getElementById('log').innerText = "Minor Attack boost."; }
+        else { state.pHP = Math.min(1000, state.pHP + 150); document.getElementById('log').innerText = "Healed 150 HP."; }
+        updateCardVisual(pCard, state.pF, state.bDmg, state.bAcc, true, state.pHP, state.eHP);
+        checkTurn();
+        };
+
+        function checkTurn() {
+        updateUI();
+        if(state.eHP <= 0) {
+        document.getElementById('log').innerHTML = "VICTORY! <button onclick='location.reload()'>RESTART</button>";
+        document.getElementById('btn-attack').disabled = true;
+        } else if(state.AP <= 0) {
+        document.getElementById('btn-attack').disabled = true;
+        document.getElementById('btn-support').disabled = true;
+        document.getElementById('btn-draw').disabled = true;
+        setTimeout(enemyTurn, 800);
+        }
+        }
+
+        async function enemyTurn() {
+        if(!state.eF || Math.random() < 0.2) state.eF = fighters[Math.floor(Math.random()*fighters.length)];
+        updateCardVisual(eCard, state.eF, state.eBDmg, state.eBAcc, false, state.eHP, state.pHP);
+        for(let i=0; i<4; i++) {
+        if(state.pHP <= 0) break;
+        await new Promise(r => setTimeout(r, 800));
+        const berserk = isBerserk(state.eHP, state.pHP);
+        const chance = state.eF.acc + (berserk ? 0.15 : 0);
+        if(Math.random() <= chance) {
+        const d = Math.round(state.eF.dmg * (berserk ? 1.2 : 1.0));
+        state.pHP -= d;
+        document.getElementById('log').innerText = `Enemy ${berserk ? "BERSERKER" : ""} hits for ${d}!`;
+        eCard.group.position.z += 0.6; setTimeout(()=>eCard.group.position.z -= 0.6, 120);
+        } else { document.getElementById('log').innerText = "Enemy missed."; }
+        updateUI();
+        updateCardVisual(pCard, state.pF, state.bDmg, state.bAcc, true, state.pHP, state.eHP);
+        updateCardVisual(eCard, state.eF, state.eBDmg, state.eBAcc, false, state.eHP, state.pHP);
+        }
+        if(state.pHP <= 0) document.getElementById('log').innerHTML = "DEFEAT. <button onclick='location.reload()'>RETRY</button>";
+        else { state.AP = 4; document.getElementById('btn-attack').disabled = false; document.getElementById('btn-support').disabled = false; document.getElementById('btn-draw').disabled = false; document.getElementById('log').innerText = "Your turn."; updateUI(); }
+        }
+
+        function animate() {
+        requestAnimationFrame(animate);
+        if(state.shake > 0) { camera.position.x = (Math.random()-0.5)*state.shake; state.shake *= 0.9; } else { camera.position.x = 0; }
+        pCard.group.position.y = -0.7 + Math.sin(Date.now()*0.001)*0.04;
+        eCard.group.position.y = -0.7 + Math.cos(Date.now()*0.001)*0.04;
+        const targetX = mouse.y * 0.15; const targetZ = -mouse.x * 0.15;
+        pCard.group.rotation.x = THREE.MathUtils.lerp(pCard.group.rotation.x, targetX, 0.1);
+        pCard.group.rotation.z = THREE.MathUtils.lerp(pCard.group.rotation.z, targetZ, 0.1);
+        renderer.render(scene, camera);
+        labelRenderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
