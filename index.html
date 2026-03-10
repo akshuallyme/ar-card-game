@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Fantasy AR Card Game</title>
+    <!-- A-Frame -->
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <!-- AR.js with marker tracking -->
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <!-- Look-at component for billboard effect -->
+    <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
+    <style>
+      .instructions {
+        position: fixed;
+        bottom: 20px;
+        left: 0;
+        width: 100%;
+        text-align: center;
+        z-index: 9999;
+        font-family: sans-serif;
+        color: white;
+        text-shadow: 2px 2px 4px #000;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body style="margin: 0; overflow: hidden;">
+    <div class="instructions">
+      <h3>Fantasy AR Card Game</h3>
+      <p>Point camera at Barcode Marker 1 or 2</p>
+    </div>
+
+    <!-- Set up the AR scene with barcode detection -->
+    <!-- Matrix code type 3x3 is very stable and tracks well for cards -->
+    <a-scene 
+      vr-mode-ui="enabled: false;"
+      embedded 
+      arjs="sourceType: webcam; detectionMode: mono_and_matrix; matrixCodeType: 3x3; debugUIEnabled: false;">
+      
+      <a-assets>
+        <img id="magma-mauler" src="./assets/magma-mauler.png" />
+        <img id="beast-commander" src="./assets/beast-commander.png" />
+      </a-assets>
+
+      <!-- Barcode Marker 1: Magma Mauler -->
+      <!-- We use a 3x3 barcode matrix marker value="1" -->
+      <a-marker type="barcode" value="1">
+        <!-- Floating animation: bobs up and down from y=1 to y=1.25 -->
+        <a-entity 
+          position="0 1 0" 
+          animation="property: position; to: 0 1.25 0; dur: 2000; easing: easeInOutSine; dir: alternate; loop: true">
+          <a-image 
+            src="#magma-mauler" 
+            look-at="[camera]" 
+            position="0 0 0" 
+            scale="1.5 2 1.5">
+          </a-image>
+        </a-entity>
+      </a-marker>
+
+      <!-- Barcode Marker 2: Beast Commander -->
+      <a-marker type="barcode" value="2">
+        <a-entity 
+          position="0 1 0" 
+          animation="property: position; to: 0 1.25 0; dur: 2200; easing: easeInOutSine; dir: alternate; loop: true">
+          <a-image 
+            src="#beast-commander" 
+            look-at="[camera]" 
+            position="0 0 0" 
+            scale="1.5 2 1.5">
+          </a-image>
+        </a-entity>
+      </a-marker>
+
+      <a-entity camera></a-entity>
+    </a-scene>
+  </body>
+</html>
